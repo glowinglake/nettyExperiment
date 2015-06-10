@@ -1,9 +1,6 @@
 package wyy.example;
 
-import wyy.example.DiscardServerHandler;
-
 import io.netty.bootstrap.ServerBootstrap;
-
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -11,16 +8,31 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import org.apache.log4j.Logger;
 
 /**
  * Discards any incoming data.
  */
 public class DiscardServer {
 
+    private static final Logger LOGGER = Logger.getLogger(DiscardServer.class);
     private int port;
 
     public DiscardServer(int port) {
         this.port = port;
+    }
+
+    public static void main(String[] args) throws Exception {
+        System.out.print("test print");
+        System.out.flush();
+        LOGGER.info("Received message: ");
+        int port;
+        if (args.length > 0) {
+            port = Integer.parseInt(args[0]);
+        } else {
+            port = 8080;
+        }
+        new DiscardServer(port).run();
     }
 
     public void run() throws Exception {
@@ -29,15 +41,15 @@ public class DiscardServer {
         try {
             ServerBootstrap b = new ServerBootstrap(); // (2)
             b.group(bossGroup, workerGroup)
-		.channel(NioServerSocketChannel.class) // (3)
-		.childHandler(new ChannelInitializer<SocketChannel>() { // (4)
-                 @Override
-		     public void initChannel(SocketChannel ch) throws Exception {
-                     ch.pipeline().addLast(new TimeServerHandler());
-                 }
-		    })
-		.option(ChannelOption.SO_BACKLOG, 128)          // (5)
-		.childOption(ChannelOption.SO_KEEPALIVE, true); // (6)
+                    .channel(NioServerSocketChannel.class) // (3)
+                    .childHandler(new ChannelInitializer<SocketChannel>() { // (4)
+                        @Override
+                        public void initChannel(SocketChannel ch) throws Exception {
+                            ch.pipeline().addLast(new TimeServerHandler());
+                        }
+                    })
+                    .option(ChannelOption.SO_BACKLOG, 128)          // (5)
+                    .childOption(ChannelOption.SO_KEEPALIVE, true); // (6)
 
             // Bind and start to accept incoming connections.
             ChannelFuture f = b.bind(port).sync(); // (7)
@@ -50,18 +62,5 @@ public class DiscardServer {
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
         }
-    }
-
-    public static void main(String[] args) throws Exception {
-	System.out.print("test print"); 
-	System.out.flush();
-
-       int port;
-        if (args.length > 0) {
-            port = Integer.parseInt(args[0]);
-        } else {
-            port = 8080;
-        }
-        new DiscardServer(port).run();
     }
 }
